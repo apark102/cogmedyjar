@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Global Money Jar</title>
+
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #f6f7fb;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    .wrap {
+      text-align: center;
+    }
+
+    #total {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+
+    #jarBtn {
+      background: white;
+      border: none;
+      width: 220px;
+      height: 220px;
+      border-radius: 24px;
+      font-size: 6rem;
+      cursor: pointer;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+
+    #jarBtn.shake {
+      animation: shake 0.2s;
+    }
+
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      50% { transform: translateX(6px); }
+      75% { transform: translateX(-4px); }
+      100% { transform: translateX(0); }
+    }
+
+    .pop {
+      position: absolute;
+      font-weight: 800;
+      animation: pop 0.7s ease-out forwards;
+      pointer-events: none;
+    }
+
+    @keyframes pop {
+      from { opacity: 1; transform: translateY(0); }
+      to { opacity: 0; transform: translateY(-40px); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="wrap">
+    <div id="total">$0.00</div>
+    <button id="jarBtn">🫙</button>
+  </div>
+
+  <!-- 🔹 Local animations -->
+  <script>
+    function shake() {
+      const btn = document.getElementById("jarBtn");
+      btn.classList.remove("shake");
+      void btn.offsetWidth;
+      btn.classList.add("shake");
+    }
+
+    function spawnPop(text) {
+      const pop = document.createElement("div");
+      pop.className = "pop";
+      pop.textContent = text;
+      pop.style.left = "50%";
+      pop.style.top = "45%";
+      document.body.appendChild(pop);
+      setTimeout(() => pop.remove(), 700);
+    }
+  </script>
+
+  <!-- 🔹 Firebase / shared jar logic -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      onSnapshot,
+      setDoc,
+      updateDoc,
+      increment
+    } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
+    // 🔥 PASTE YOUR FIREBASE CONFIG HERE
+    const firebaseConfig = {
+      apiKey: "AIzaSyCoT43XB2GKEyUH0gowOshm4EQ48LkHldI",
+      authDomain: "cogmedy-jar.firebaseapp.com",
+      projectId: "cogmedy-jar",
+      storageBucket: "cogmedy-jar.firebasestorage.app",
+      messagingSenderId: "352395359670",
+      appId: "1:352395359670:web:b30af374a4e4102ba37d17"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    await signInAnonymously(auth);
+
+    const jarRef = doc(db, "jars", "global");
+
+    await setDoc(jarRef, { totalCents: 0 }, { merge: true });
+
+    const totalEl = document.getElementById("total");
+    const jarBtn = document.getElementById("jarBtn");
+
+    function formatDollars(cents) {
+      return `$${(cents / 100).toFixed(2)}`;
+    }
+
+    onSnapshot(jarRef, (snap) => {
+      const cents = snap.data()?.totalCents ?? 0;
+      totalEl.textContent = formatDollars(cents);
+    });
+
+    const ADD_CENTS = 100;
+
+    jarBtn.addEventListener("click", async () => {
+      await updateDoc(jarRef, { totalCents: increment(ADD_CENTS) });
+      shake();
+      spawnPop("+ $1.00");
+    });
+  </script>
+
+</body>
+</html>
