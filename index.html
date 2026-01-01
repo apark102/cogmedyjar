@@ -89,58 +89,63 @@
   </script>
 
   <!-- 🔹 Firebase / shared jar logic -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
-    import {
-      getFirestore,
-      doc,
-      onSnapshot,
-      setDoc,
-      updateDoc,
-      increment
-    } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+ <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+  import {
+    getFirestore,
+    doc,
+    getDoc,
+    onSnapshot,
+    setDoc,
+    updateDoc,
+    increment
+  } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
-    // 🔥 PASTE YOUR FIREBASE CONFIG HERE
-    const firebaseConfig = {
-      apiKey: "AIzaSyCoT43XB2GKEyUH0gowOshm4EQ48LkHldI",
-      authDomain: "cogmedy-jar.firebaseapp.com",
-      projectId: "cogmedy-jar",
-      storageBucket: "cogmedy-jar.firebasestorage.app",
-      messagingSenderId: "352395359670",
-      appId: "1:352395359670:web:b30af374a4e4102ba37d17"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyCoT43XB2GKEyUH0gowOshm4EQ48LkHldI",
+    authDomain: "cogmedy-jar.firebaseapp.com",
+    projectId: "cogmedy-jar",
+    storageBucket: "cogmedy-jar.firebasestorage.app",
+    messagingSenderId: "352395359670",
+    appId: "1:352395359670:web:b30af374a4e4102ba37d17"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-    await signInAnonymously(auth);
+  await signInAnonymously(auth);
 
-    const jarRef = doc(db, "jars", "global");
+  const jarRef = doc(db, "jars", "global");
 
-    await setDoc(jarRef, { totalCents: 0 }, { merge: true });
+  // Only create the doc once, the very first time
+  const existing = await getDoc(jarRef);
+  if (!existing.exists()) {
+    await setDoc(jarRef, { totalCents: 0 });
+  }
 
-    const totalEl = document.getElementById("total");
-    const jarBtn = document.getElementById("jarBtn");
+  const totalEl = document.getElementById("total");
+  const jarBtn = document.getElementById("jarBtn");
 
-    function formatDollars(cents) {
-      return `$${(cents / 100).toFixed(2)}`;
-    }
+  function formatDollars(cents) {
+    return `$${(cents / 100).toFixed(2)}`;
+  }
 
-    onSnapshot(jarRef, (snap) => {
-      const cents = snap.data()?.totalCents ?? 0;
-      totalEl.textContent = formatDollars(cents);
-    });
+  onSnapshot(jarRef, (snap) => {
+    const cents = snap.data()?.totalCents ?? 0;
+    totalEl.textContent = formatDollars(cents);
+  });
 
-    const ADD_CENTS = 100;
+  const ADD_CENTS = 100;
 
-    jarBtn.addEventListener("click", async () => {
-      await updateDoc(jarRef, { totalCents: increment(ADD_CENTS) });
-      shake();
-      spawnPop("+ $1.00");
-    });
-  </script>
+  jarBtn.addEventListener("click", async () => {
+    await updateDoc(jarRef, { totalCents: increment(ADD_CENTS) });
+    shake();
+    spawnPop("+ $1.00");
+  });
+</script>
+
 
 </body>
 </html>
