@@ -1,191 +1,110 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Global Money Jar</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Money Jar</title>
 
-  <style>
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      background: #f6f7fb;
-      font-family: system-ui, -apple-system, sans-serif;
-    }
+<style>
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    background: #f6f7fb;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
 
-    .wrap {
-      text-align: center;
-    }
+  .wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    text-align: center;
+  }
 
-    #total {
-      font-size: 2.5rem;
-      font-weight: 800;
-      margin-bottom: 16px;
-    }
+  #total {
+    font-size: 2.5rem;
+    font-weight: 800;
+  }
 
-    #jarBtn {
-      background: white;
-      border: none;
-      width: 220px;
-      height: 220px;
-      border-radius: 24px;
-      font-size: 6rem;
-      cursor: pointer;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-    }
+  #jarBtn {
+    background: white;
+    border: none;
+    width: 220px;
+    height: 220px;
+    border-radius: 24px;
+    font-size: 6rem;
+    cursor: pointer;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  }
 
-    #removeBtn {
-      margin-top: 14px;
-      background: white;
-      border: 1px solid rgba(0,0,0,0.12);
-      border-radius: 12px;
-      padding: 10px 14px;
-      font-size: 1rem;
-      font-weight: 650;
-      cursor: pointer;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-    }
+  #jarBtn.shake {
+    animation: shake 0.35s;
+  }
 
-    #removeBtn:active {
-      transform: translateY(1px);
-    }
+  @keyframes shake {
+    0%   { transform: rotate(0deg); }
+    20%  { transform: rotate(-20deg); }
+    40%  { transform: rotate(20deg); }
+    60%  { transform: rotate(-15deg); }
+    80%  { transform: rotate(15deg); }
+    100% { transform: rotate(0deg); }
+  }
 
-    #jarBtn.shake {
-      animation: shake 0.2s;
-    }
-
-    @keyframes shake {
-      0% { transform: translateX(0) rotate(0deg); }
-      25% { transform: translateX(-6px) rotate(-20deg); }
-      50% { transform: translateX(6px) rotate(20deg); }
-      75% { transform: translateX(-4px) rotate(-12deg); }
-      100% { transform: translateX(0) rotate(0deg); }
-    }
-
-    .pop {
-      position: absolute;
-      font-weight: 800;
-      animation: pop 0.7s ease-out forwards;
-      pointer-events: none;
-    }
-
-    @keyframes pop {
-      from { opacity: 1; transform: translateY(0); }
-      to { opacity: 0; transform: translateY(-40px); }
-    }
-  </style>
+  .btn {
+    width: 220px;
+    padding: 12px;
+    font-size: 1rem;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    background: white;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+  }
+</style>
 </head>
-<body>
 
+<body>
   <div class="wrap">
     <div id="total">$0.00</div>
+
     <button id="jarBtn">🫙</button>
-    <button id="removeBtn">Remove $1.00</button>
+
+    <button id="removeBtn" class="btn">Remove $1.00</button>
   </div>
 
-  <!-- 🔹 Local animations -->
-  <script>
-    function shake() {
-      const btn = document.getElementById("jarBtn");
-      btn.classList.remove("shake");
-      void btn.offsetWidth;
-      btn.classList.add("shake");
-    }
-
-    function spawnPop(text) {
-      const pop = document.createElement("div");
-      pop.className = "pop";
-      pop.textContent = text;
-      pop.style.left = "50%";
-      pop.style.top = "45%";
-      document.body.appendChild(pop);
-      setTimeout(() => pop.remove(), 700);
-    }
-  </script>
-
-  <!-- 🔹 Firebase / shared jar logic -->
- <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
-  import {
-    getFirestore,
-    doc,
-    getDoc,
-    onSnapshot,
-    runTransaction,
-    setDoc,
-    updateDoc,
-    increment
-  } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyCoT43XB2GKEyUH0gowOshm4EQ48LkHldI",
-    authDomain: "cogmedy-jar.firebaseapp.com",
-    projectId: "cogmedy-jar",
-    storageBucket: "cogmedy-jar.firebasestorage.app",
-    messagingSenderId: "352395359670",
-    appId: "1:352395359670:web:b30af374a4e4102ba37d17"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-
-  await signInAnonymously(auth);
-
-  const jarRef = doc(db, "jars", "global");
-
-  // Only create the doc once, the very first time
-  const existing = await getDoc(jarRef);
-  if (!existing.exists()) {
-    await setDoc(jarRef, { totalCents: 0 });
-  }
+<script>
+  let totalCents = 0;
 
   const totalEl = document.getElementById("total");
   const jarBtn = document.getElementById("jarBtn");
   const removeBtn = document.getElementById("removeBtn");
 
-  function formatDollars(cents) {
-    return `$${(cents / 100).toFixed(2)}`;
+  function render() {
+    totalEl.textContent = `$${(totalCents / 100).toFixed(2)}`;
   }
 
-  onSnapshot(jarRef, (snap) => {
-    const cents = snap.data()?.totalCents ?? 0;
-    totalEl.textContent = formatDollars(cents);
-  });
+  function shake() {
+    jarBtn.classList.remove("shake");
+    void jarBtn.offsetWidth;
+    jarBtn.classList.add("shake");
+  }
 
-  const ADD_CENTS = 100;
-
-  jarBtn.addEventListener("click", async () => {
-    await updateDoc(jarRef, { totalCents: increment(ADD_CENTS) });
+  jarBtn.addEventListener("click", () => {
+    totalCents += 100;
+    render();
     shake();
-    spawnPop("+ $1.00");
   });
 
-  removeBtn.addEventListener("click", async () => {
-    let removed = 0;
-
-    await runTransaction(db, async (tx) => {
-      const snap = await tx.get(jarRef);
-      const current = snap.data()?.totalCents ?? 0;
-
-      if (current <= 0) {
-        removed = 0;
-        return;
-      }
-
-      const next = Math.max(0, current - ADD_CENTS);
-      removed = current - next;
-      tx.update(jarRef, { totalCents: next });
-    });
-
+  removeBtn.addEventListener("click", () => {
+    if (totalCents <= 0) return;
+    totalCents -= 100;
+    render();
     shake();
-    spawnPop(removed > 0 ? "- $1.00" : "$0.00");
   });
+
+  render();
 </script>
-
-
 </body>
 </html>
