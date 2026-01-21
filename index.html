@@ -1,110 +1,254 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Money Jar</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Global Money Jar</title>
 
-<style>
-  body {
-    margin: 0;
-    min-height: 100vh;
-    display: grid;
-    place-items: center;
-    background: #f6f7fb;
-    font-family: system-ui, -apple-system, sans-serif;
-  }
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #f6f7fb;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
 
-  .wrap {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 14px;
-    text-align: center;
-  }
+    .wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      text-align: center;
+      position: relative;
+    }
 
-  #total {
-    font-size: 2.5rem;
-    font-weight: 800;
-  }
+    #total {
+      font-size: 2.5rem;
+      font-weight: 800;
+    }
 
-  #jarBtn {
-    background: white;
-    border: none;
-    width: 220px;
-    height: 220px;
-    border-radius: 24px;
-    font-size: 6rem;
-    cursor: pointer;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-  }
+    #status {
+      font-size: 0.95rem;
+      color: rgba(0,0,0,0.6);
+      max-width: 320px;
+      line-height: 1.25;
+      min-height: 1.25em;
+    }
 
-  #jarBtn.shake {
-    animation: shake 0.35s;
-  }
+    #status.error {
+      color: #b00020;
+      font-weight: 650;
+    }
 
-  @keyframes shake {
-    0%   { transform: rotate(0deg); }
-    20%  { transform: rotate(-20deg); }
-    40%  { transform: rotate(20deg); }
-    60%  { transform: rotate(-15deg); }
-    80%  { transform: rotate(15deg); }
-    100% { transform: rotate(0deg); }
-  }
+    #jarBtn {
+      background: white;
+      border: none;
+      width: 220px;
+      height: 220px;
+      border-radius: 24px;
+      font-size: 6rem;
+      cursor: pointer;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
 
-  .btn {
-    width: 220px;
-    padding: 12px;
-    font-size: 1rem;
-    border-radius: 12px;
-    border: none;
-    cursor: pointer;
-    background: white;
-    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
-  }
-</style>
+    .btn {
+      width: 220px;
+      padding: 12px;
+      font-size: 1rem;
+      border-radius: 12px;
+      border: 1px solid rgba(0,0,0,0.12);
+      cursor: pointer;
+      background: white;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+      font-weight: 650;
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    #jarBtn.shake {
+      animation: shake 0.35s ease-in-out;
+    }
+
+    @keyframes shake {
+      0%   { transform: translateX(0) rotate(0deg); }
+      16%  { transform: translateX(-8px) rotate(-20deg); }
+      32%  { transform: translateX(8px) rotate(20deg); }
+      48%  { transform: translateX(-7px) rotate(-20deg); }
+      64%  { transform: translateX(7px) rotate(20deg); }
+      80%  { transform: translateX(-4px) rotate(-12deg); }
+      92%  { transform: translateX(4px) rotate(12deg); }
+      100% { transform: translateX(0) rotate(0deg); }
+    }
+
+    #status {
+      font-size: 0.95rem;
+      color: rgba(0,0,0,0.6);
+      max-width: 320px;
+      line-height: 1.25;
+      min-height: 1.25em;
+    }
+
+    #status.error {
+      color: #b00020;
+      font-weight: 650;
+    }
+
+    .pop {
+      position: absolute;
+      font-weight: 800;
+      pointer-events: none;
+      animation: pop 0.7s ease-out forwards;
+      left: 50%;
+      top: 45%;
+      transform: translateX(-50%);
+    }
+
+    @keyframes pop {
+      from { opacity: 1; transform: translateX(-50%) translateY(0); }
+      to   { opacity: 0; transform: translateX(-50%) translateY(-40px); }
+    }
+  </style>
 </head>
 
 <body>
   <div class="wrap">
     <div id="total">$0.00</div>
-
-    <button id="jarBtn">🫙</button>
-
+    <button id="jarBtn" aria-label="Add one dollar">🫙</button>
     <button id="removeBtn" class="btn">Remove $1.00</button>
+    <div id="status"></div>
   </div>
 
-<script>
-  let totalCents = 0;
+  <script>
+    const jarBtn = document.getElementById("jarBtn");
+    const statusEl = document.getElementById("status");
 
-  const totalEl = document.getElementById("total");
-  const jarBtn = document.getElementById("jarBtn");
-  const removeBtn = document.getElementById("removeBtn");
+    function shake() {
+      jarBtn.classList.remove("shake");
+      void jarBtn.offsetWidth;
+      jarBtn.classList.add("shake");
+    }
 
-  function render() {
-    totalEl.textContent = `$${(totalCents / 100).toFixed(2)}`;
-  }
+    function spawnPop(text) {
+      const pop = document.createElement("div");
+      pop.className = "pop";
+      pop.textContent = text;
+      document.body.appendChild(pop);
+      setTimeout(() => pop.remove(), 700);
+    }
 
-  function shake() {
-    jarBtn.classList.remove("shake");
-    void jarBtn.offsetWidth;
-    jarBtn.classList.add("shake");
-  }
+    function setStatus(msg, isError = false) {
+      statusEl.textContent = msg || "";
+      statusEl.classList.toggle("error", !!isError);
+    }
+  </script>
 
-  jarBtn.addEventListener("click", () => {
-    totalCents += 100;
-    render();
-    shake();
-  });
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      onSnapshot,
+      runTransaction,
+      setDoc,
+      updateDoc,
+      increment
+    } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
-  removeBtn.addEventListener("click", () => {
-    if (totalCents <= 0) return;
-    totalCents -= 100;
-    render();
-    shake();
-  });
+    const firebaseConfig = {
+      apiKey: "AIzaSyCoT43XB2GKEyUH0gowOshm4EQ48LkHldI",
+      authDomain: "cogmedy-jar.firebaseapp.com",
+      projectId: "cogmedy-jar",
+      storageBucket: "cogmedy-jar.firebasestorage.app",
+      messagingSenderId: "352395359670",
+      appId: "1:352395359670:web:b30af374a4e4102ba37d17"
+    };
 
-  render();
-</script>
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const totalEl = document.getElementById("total");
+    const jarBtn = document.getElementById("jarBtn");
+    const removeBtn = document.getElementById("removeBtn");
+
+    const jarRef = doc(db, "jars", "global");
+    const STEP_CENTS = 100;
+
+    function formatDollars(cents) {
+      return `$${(cents / 100).toFixed(2)}`;
+    }
+
+    async function ensureDoc() {
+      const snap = await getDoc(jarRef);
+      if (!snap.exists()) {
+        await setDoc(jarRef, { totalCents: 0 }, { merge: true });
+      }
+    }
+
+    async function boot() {
+      try {
+        setStatus("Connecting…");
+        await signInAnonymously(auth);
+        await ensureDoc();
+
+        onSnapshot(
+          jarRef,
+          (snap) => {
+            const cents = snap.data()?.totalCents ?? 0;
+            totalEl.textContent = formatDollars(cents);
+            setStatus("");
+          },
+          (err) => {
+            console.error("Snapshot error:", err);
+            setStatus("Live updates failed. Check Firestore rules.", true);
+          }
+        );
+
+        jarBtn.addEventListener("click", async () => {
+          try {
+            await updateDoc(jarRef, { totalCents: increment(STEP_CENTS) });
+            shake();
+            spawnPop("+ $1.00");
+          } catch (err) {
+            console.error("Add failed:", err);
+            setStatus("Add failed. Open Console for details.", true);
+          }
+        });
+
+        removeBtn.addEventListener("click", async () => {
+          try {
+            const removed = await runTransaction(db, async (tx) => {
+              const snap = await tx.get(jarRef);
+              const current = snap.data()?.totalCents ?? 0;
+              if (current <= 0) return 0;
+
+              const next = Math.max(0, current - STEP_CENTS);
+              tx.update(jarRef, { totalCents: next });
+              return current - next;
+            });
+
+            shake();
+            spawnPop(removed > 0 ? "- $1.00" : "$0.00");
+          } catch (err) {
+            console.error("Remove failed:", err);
+            setStatus("Remove failed. Likely Firestore rules. Open Console.", true);
+          }
+        });
+      } catch (err) {
+        console.error("Boot failed:", err);
+        setStatus("Could not connect. Open Console for details.", true);
+      }
+    }
+
+    boot();
+  </script>
 </body>
 </html>
