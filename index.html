@@ -36,16 +36,32 @@
       box-shadow: 0 10px 30px rgba(0,0,0,0.15);
     }
 
+    #removeBtn {
+      margin-top: 14px;
+      background: white;
+      border: 1px solid rgba(0,0,0,0.12);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 1rem;
+      font-weight: 650;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    }
+
+    #removeBtn:active {
+      transform: translateY(1px);
+    }
+
     #jarBtn.shake {
       animation: shake 0.2s;
     }
 
     @keyframes shake {
-      0% { transform: translateX(0); }
-      25% { transform: translateX(-6px); }
-      50% { transform: translateX(6px); }
-      75% { transform: translateX(-4px); }
-      100% { transform: translateX(0); }
+      0% { transform: translateX(0) rotate(0deg); }
+      25% { transform: translateX(-6px) rotate(-20deg); }
+      50% { transform: translateX(6px) rotate(20deg); }
+      75% { transform: translateX(-4px) rotate(-12deg); }
+      100% { transform: translateX(0) rotate(0deg); }
     }
 
     .pop {
@@ -66,6 +82,7 @@
   <div class="wrap">
     <div id="total">$0.00</div>
     <button id="jarBtn">🫙</button>
+    <button id="removeBtn">Remove $1.00</button>
   </div>
 
   <!-- 🔹 Local animations -->
@@ -97,6 +114,7 @@
     doc,
     getDoc,
     onSnapshot,
+    runTransaction,
     setDoc,
     updateDoc,
     increment
@@ -127,6 +145,7 @@
 
   const totalEl = document.getElementById("total");
   const jarBtn = document.getElementById("jarBtn");
+  const removeBtn = document.getElementById("removeBtn");
 
   function formatDollars(cents) {
     return `$${(cents / 100).toFixed(2)}`;
@@ -143,6 +162,27 @@
     await updateDoc(jarRef, { totalCents: increment(ADD_CENTS) });
     shake();
     spawnPop("+ $1.00");
+  });
+
+  removeBtn.addEventListener("click", async () => {
+    let removed = 0;
+
+    await runTransaction(db, async (tx) => {
+      const snap = await tx.get(jarRef);
+      const current = snap.data()?.totalCents ?? 0;
+
+      if (current <= 0) {
+        removed = 0;
+        return;
+      }
+
+      const next = Math.max(0, current - ADD_CENTS);
+      removed = current - next;
+      tx.update(jarRef, { totalCents: next });
+    });
+
+    shake();
+    spawnPop(removed > 0 ? "- $1.00" : "$0.00");
   });
 </script>
 
